@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tebak Angka Ella ❤️</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+            font-family: 'Segoe UI', sans-serif;
+            text-align: center;
+            margin: 0;
+            touch-action: manipulation;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 400px;
+        }
+        h1 { color: #d63384; font-size: 1.5rem; }
+        input {
+            width: 80%;
+            padding: 15px;
+            margin: 15px 0;
+            border: 2px solid #ff9a9e;
+            border-radius: 10px;
+            font-size: 1rem;
+            text-align: center;
+        }
+        button {
+            padding: 12px 25px;
+            background: #d63384;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+        #message { margin-top: 20px; font-weight: bold; color: #555; }
+        .reason { font-size: 0.9rem; color: #ff4d6d; margin-top: 10px; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Tebak Angka Ella ❤️</h1>
+    <p>Aku mikirin angka 1-100, coba tebak berapa?</p>
+    <input type="number" id="guess" placeholder="Masukkan angka...">
+    <br>
+    <button onclick="checkGuess()">Cek Tebakan</button>
+    <p id="message"></p>
+    <div id="extra-info" class="reason"></div>
+    <p id="attempts">Percobaan: 0</p>
+</div>
+
+<script>
+    const secretNumber = 42;
+    let attempts = 0;
+
+    function checkGuess() {
+        const inputField = document.getElementById('guess');
+        const userGuess = parseInt(inputField.value);
+        const message = document.getElementById('message');
+        const extraInfo = document.getElementById('extra-info');
+        const attemptsDisplay = document.getElementById('attempts');
+        
+        if (isNaN(userGuess)) {
+            message.innerText = "Masukkan angka dulu sayang..";
+            return;
+        }
+
+        attempts++;
+        attemptsDisplay.innerText = "Percobaan: " + attempts;
+
+        if (userGuess === secretNumber) {
+            message.innerHTML = "Yeay! Bener banget Ella! ❤️ Angkanya adalah 42.";
+            message.style.color = "green";
+            // Menampilkan penjelasan spesial
+            extraInfo.innerHTML = "Kenapa 42? Karena 16 ditambah 26 adalah 42. Angka spesial buat kita! 😊";
+        } else if (userGuess < secretNumber) {
+            message.innerText = "Terlalu rendah, naik lagi ya! ⬆️";
+            extraInfo.innerHTML = "";
+        } else {
+            message.innerText = "Terlalu tinggi, turun lagi ya! ⬇️";
+            extraInfo.innerHTML = "";
+        }
+        
+        inputField.value = "";
+    }
+</script>
+
+</body>
+</html>
