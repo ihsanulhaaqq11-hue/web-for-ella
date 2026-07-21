@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foto 360° Ella</title>
+    
+    <!-- Memanggil Pannellum -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+    
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Segoe UI', Tahoma, sans-serif; 
+            background-color: #111; 
+            color: white; 
+            text-align: center; 
+            overflow: hidden; 
+        }
+        
+        #panorama { 
+            width: 100vw; 
+            height: 100vh; 
+            border: none; 
+        }
+        
+        .judul {
+            position: absolute; 
+            top: 20px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            z-index: 10; 
+            background: rgba(0, 0, 0, 0.5); 
+            padding: 10px 20px;
+            border-radius: 20px; 
+            backdrop-filter: blur(5px); 
+            pointer-events: none;
+        }
+
+        /* Desain tombol panah Kiri & Kanan */
+        .tombol-panah {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .tombol-panah:hover {
+            background: #e94560;
+            border-color: #e94560;
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        /* Posisi masing-masing panah */
+        .panah-kiri { left: 20px; }
+        .panah-kanan { right: 20px; }
+
+        /* Indikator halaman foto */
+        .indikator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 15px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="judul">
+        <h3>Memori 360° ✨</h3>
+    </div>
+
+    <!-- Tempat foto 360 -->
+    <div id="panorama"></div>
+
+    <!-- Tombol navigasi panah -->
+    <button class="tombol-panah panah-kiri" onclick="geserFoto(-1)">❮</button>
+    <button class="tombol-panah panah-kanan" onclick="geserFoto(1)">❯</button>
+
+    <!-- Indikator urutan foto (contoh: 1 / 5) -->
+    <div class="indikator" id="teks-indikator">Foto 1 dari 5</div>
+
+    <script>
+        // Daftar nama lokasi/foto sesuai urutan
+        const daftarFoto = ['foto1', 'foto2', 'foto3', 'foto4', 'foto5'];
+        let indeksSekarang = 0; // Mulai dari foto urutan pertama (indeks 0)
+
+        const viewer360 = pannellum.viewer('panorama', {
+            "default": {
+                "firstScene": "foto1",
+                "autoLoad": true,
+                "sceneFadeDuration": 1000, 
+                "autoRotate": -2
+            },
+
+            // Tempat menaruh ke-5 foto
+            "scenes": {
+                "foto1": {
+                    "type": "equirectangular",
+                    "panorama": "https://i.ibb.co.com/GfcDg2Py/PANO-20230323-082833-jpg.jpg" // GANTI LINK FOTO 1
+                },
+                "foto2": {
+                    "type": "equirectangular",
+                    "panorama": "https://i.ibb.co.com/WWLmsjD9/PANO-20220416-124414-jpg.jpg" // GANTI LINK FOTO 2
+                },
+                "foto3": {
+                    "type": "equirectangular",
+                    "panorama": "https://i.ibb.co.com/PGR3z77j/PANO-20190112-202824-jpg.jpg" // GANTI LINK FOTO 3
+                },
+                "foto4": {
+                    "type": "equirectangular",
+                    "panorama": "https://i.ibb.co.com/rGt0Cz9j/PANO-20171214-092954-jpg.jpg" // GANTI LINK FOTO 4
+                },
+                "foto5": {
+                    "type": "equirectangular",
+                    "panorama": "https://i.ibb.co.com/CKWs4hvG/PANO-20171210-161308-jpg.jpg" // GANTI LINK FOTO 5
+                }
+            }
+        });
+
+        // Fungsi untuk menggeser foto kiri atau kanan
+        function geserFoto(arah) {
+            indeksSekarang += arah;
+
+            // Jika sudah di foto terakhir dan tekan kanan, balik ke foto 1
+            if (indeksSekarang >= daftarFoto.length) {
+                indeksSekarang = 0;
+            } 
+            // Jika sudah di foto pertama dan tekan kiri, pergi ke foto terakhir
+            else if (indeksSekarang < 0) {
+                indeksSekarang = daftarFoto.length - 1;
+            }
+
+            // Ganti adegan/foto ke lokasi yang baru
+            viewer360.loadScene(daftarFoto[indeksSekarang]);
+
+            // Update teks indikator di bawah
+            document.getElementById("teks-indikator").innerText = `Foto ${indeksSekarang + 1} dari 5`;
+        }
+    </script>
+
+</body>
+</html>
