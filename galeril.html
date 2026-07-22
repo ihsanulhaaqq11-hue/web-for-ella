@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galeri Spesial Ella ✨</title>
+    
+    <!-- Memanggil Pannellum untuk foto 360 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background-color: #0f172a; /* Warna latar gelap elegan */
+            color: white;
+            text-align: center;
+            overflow-x: hidden;
+        }
+
+        /* Navigasi / Opsi Tab */
+        .navigasi {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border-radius: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            gap: 10px;
+        }
+
+        .navigasi button {
+            background: transparent;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .navigasi button.aktif {
+            background: #e94560;
+            box-shadow: 0 4px 10px rgba(233, 69, 96, 0.4);
+        }
+
+        /* Kontainer Utama */
+        .tab-konten {
+            display: none; /* Disembunyikan secara default, diatur lewat JS */
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* --- Gaya Untuk Galeri Biasa --- */
+        #wadah-biasa {
+            padding-top: 100px; /* Jarak agar tidak tertutup tombol navigasi */
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        .grid-galeri {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 0 30px 50px 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .grid-galeri img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .grid-galeri img:hover {
+            transform: scale(1.05);
+        }
+
+        /* --- Gaya Untuk Galeri 360 --- */
+        #panorama {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .tombol-panah {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            z-index: 10; background: rgba(255, 255, 255, 0.2); color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3); width: 50px; height: 50px;
+            border-radius: 50%; font-size: 24px; font-weight: bold; cursor: pointer;
+            backdrop-filter: blur(8px); transition: all 0.3s ease;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .tombol-panah:hover { background: #e94560; border-color: #e94560; transform: translateY(-50%) scale(1.1); }
+        .panah-kiri { left: 20px; }
+        .panah-kanan { right: 20px; }
+        
+        .indikator {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            z-index: 10; background: rgba(0, 0, 0, 0.6); padding: 8px 15px;
+            border-radius: 15px; backdrop-filter: blur(5px); font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Tombol Opsi -->
+    <div class="navigasi">
+        <button id="btn-biasa" onclick="bukaTab('biasa')">Foto Biasa</button>
+        <button id="btn-360" onclick="bukaTab('360')">Memori 360°</button>
+    </div>
+
+    <!-- Tampilan Galeri Biasa -->
+    <div id="wadah-biasa" class="tab-konten">
+        <h2 style="margin-bottom: 30px;">Galeri Foto ✨</h2>
+        <div class="grid-galeri" id="galeri-biasa">
+            <!-- Foto akan dimuat di sini oleh JS -->
+        </div>
+    </div>
+
+    <!-- Tampilan Galeri 360 -->
+    <div id="wadah-360" class="tab-konten">
+        <div id="panorama"></div>
+        <button class="tombol-panah panah-kiri" onclick="geserFoto360(-1)">❮</button>
+        <button class="tombol-panah panah-kanan" onclick="geserFoto360(1)">❯</button>
+        <div class="indikator" id="teks-indikator-360">Memuat foto 360...</div>
+    </div>
+
+    <script>
+        // Variabel untuk melacak status agar tidak meload file JSON berulang kali
+        let sudahLoadBiasa = false;
+        let sudahLoad360 = false;
+        
+        // Variabel kontrol Pannellum
+        let viewer360;
+        let urutanFoto360 = [];
+        let indeksSekarang360 = 0;
+
+        // Fungsi berpindah halaman
+        function bukaTab(jenis) {
+            // Sembunyikan semua wadah
+            document.getElementById("wadah-biasa").style.display = "none";
+            document.getElementById("wadah-360").style.display = "none";
+            
+            // Hapus efek warna aktif dari semua tombol
+            document.getElementById("btn-biasa").classList.remove("aktif");
+            document.getElementById("btn-360").classList.remove("aktif");
+
+            // Tampilkan wadah yang dipilih
+            document.getElementById("wadah-" + jenis).style.display = "block";
+            document.getElementById("btn-" + jenis).classList.add("aktif");
+
+            // Eksekusi fungsi load JSON sesuai tab
+            if (jenis === "biasa" && !sudahLoadBiasa) muatFotoBiasa();
+            if (jenis === "360" && !sudahLoad360) muatFoto360();
+        }
+
+        // --- SISTEM FOTO BIASA ---
+        function muatFotoBiasa() {
+            fetch('foto1.json')
+                .then(res => res.json())
+                .then(data => {
+                    const wadahGaleri = document.getElementById("galeri-biasa");
+                    data.forEach(link => {
+                        wadahGaleri.innerHTML += `<img src="${link}" alt="Foto Ella">`;
+                    });
+                    sudahLoadBiasa = true;
+                })
+                .catch(err => console.error("Gagal muat biasa.json", err));
+        }
+
+        // --- SISTEM FOTO 360 ---
+        function muatFoto360() {
+            fetch('data.json')
+                .then(res => res.json())
+                .then(data => {
+                    let daftarScene = {};
+                    
+                    data.forEach((link, index) => {
+                        let namaID = "foto360_" + (index + 1);
+                        urutanFoto360.push(namaID);
+                        
+                        daftarScene[namaID] = {
+                            "type": "equirectangular",
+                            "panorama": link
+                        };
+                    });
+
+                    viewer360 = pannellum.viewer('panorama', {
+                        "default": {
+                            "firstScene": urutanFoto360[0],
+                            "autoLoad": true,
+                            "sceneFadeDuration": 1000, 
+                            "autoRotate": -2
+                        },
+                        "scenes": daftarScene
+                    });
+
+                    document.getElementById("teks-indikator-360").innerText = `Foto 1 dari ${urutanFoto360.length}`;
+                    sudahLoad360 = true;
+                })
+                .catch(err => console.error("Gagal muat 360.json", err));
+        }
+
+        // Fungsi untuk panah 360
+        function geserFoto360(arah) {
+            if (urutanFoto360.length === 0) return; 
+            
+            indeksSekarang360 += arah;
+            if (indeksSekarang360 >= urutanFoto360.length) indeksSekarang360 = 0;
+            else if (indeksSekarang360 < 0) indeksSekarang360 = urutanFoto360.length - 1;
+
+            viewer360.loadScene(urutanFoto360[indeksSekarang360]);
+            document.getElementById("teks-indikator-360").innerText = `Foto ${indeksSekarang360 + 1} dari ${urutanFoto360.length}`;
+        }
+
+        // Jalankan tab foto biasa pertama kali saat web dibuka
+        bukaTab('biasa');
+    </script>
+
+</body>
+</html>
