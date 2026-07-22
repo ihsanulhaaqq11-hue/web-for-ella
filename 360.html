@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foto 360° Ella</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.css"/>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/pannellum@2.5.6/build/pannellum.js"></script>
+    
+    <style>
+        body { margin: 0; padding: 0; font-family: sans-serif; background-color: #111; color: white; text-align: center; overflow: hidden; }
+        #panorama { width: 100vw; height: 100vh; border: none; }
+        
+        .judul { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10; background: rgba(0, 0, 0, 0.5); padding: 10px 20px; border-radius: 20px; backdrop-filter: blur(5px); pointer-events: none; }
+        .tombol-panah { position: absolute; top: 50%; transform: translateY(-50%); z-index: 10; background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.3); width: 50px; height: 50px; border-radius: 50%; font-size: 24px; font-weight: bold; cursor: pointer; backdrop-filter: blur(8px); transition: all 0.3s ease; display: flex; justify-content: center; align-items: center; }
+        .tombol-panah:hover { background: #e94560; border-color: #e94560; transform: translateY(-50%) scale(1.1); }
+        .panah-kiri { left: 20px; }
+        .panah-kanan { right: 20px; }
+        .indikator { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10; background: rgba(0, 0, 0, 0.5); padding: 8px 15px; border-radius: 15px; backdrop-filter: blur(5px); font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <div class="judul"><h3>Memori 360° ✨</h3></div>
+    <div id="panorama"></div>
+
+    <button class="tombol-panah panah-kiri" onclick="geserFoto(-1)">❮</button>
+    <button class="tombol-panah panah-kanan" onclick="geserFoto(1)">❯</button>
+    <div class="indikator" id="teks-indikator">Memuat foto...</div>
+
+    <script>
+        let viewer360;
+        let urutanFoto = [];
+        let indeksSekarang = 0;
+
+        // 1. MENYEDOT DATA DARI FILE JSON
+        fetch('data.json')
+            .then(response => response.json())
+            .then(kumpulanLink => {
+                let daftarScene = {};
+                
+                // 2. OTOMATIS MEMBUAT DAFTAR FOTO
+                kumpulanLink.forEach((link, index) => {
+                    let namaID = "foto" + (index + 1);
+                    urutanFoto.push(namaID);
+                    
+                    daftarScene[namaID] = {
+                        "type": "equirectangular",
+                        "panorama": link
+                    };
+                });
+
+                // 3. MENJALANKAN PANNELLUM SETELAH DATA SIAP
+                viewer360 = pannellum.viewer('panorama', {
+                    "default": {
+                        "firstScene": urutanFoto[0],
+                        "autoLoad": true,
+                        "sceneFadeDuration": 1000, 
+                        "autoRotate": -2
+                    },
+                    "scenes": daftarScene
+                });
+
+                document.getElementById("teks-indikator").innerText = `Foto 1 dari ${urutanFoto.length}`;
+            })
+            .catch(error => {
+                // Pesan jika file JSON gagal dibaca
+                console.error("Gagal memuat JSON:", error);
+                document.getElementById("teks-indikator").innerText = "Gagal memuat foto!";
+            });
+
+        // 4. FUNGSI TOMBOL PANAH
+        function geserFoto(arah) {
+            if (urutanFoto.length === 0) return; // Cegah error jika JSON belum selesai dimuat
+            
+            indeksSekarang += arah;
+            if (indeksSekarang >= urutanFoto.length) indeksSekarang = 0;
+            else if (indeksSekarang < 0) indeksSekarang = urutanFoto.length - 1;
+
+            viewer360.loadScene(urutanFoto[indeksSekarang]);
+            document.getElementById("teks-indikator").innerText = `Foto ${indeksSekarang + 1} dari ${urutanFoto.length}`;
+        }
+    </script>
+
+</body>
+</html>
