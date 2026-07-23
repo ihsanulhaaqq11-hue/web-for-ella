@@ -2,11 +2,9 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <!-- Penambahan user-scalable=no agar layar HP tidak tidak sengaja ter-zoom -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gestur Kamera AI 📸</title>
     
-    <!-- Memanggil Library MediaPipe -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
@@ -19,7 +17,7 @@
 
         body {
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -29,7 +27,7 @@
             color: white;
             font-family: 'Segoe UI', Tahoma, sans-serif;
             text-align: center;
-            overflow: hidden; /* Mencegah layar HP bisa di-scroll ke bawah */
+            overflow: hidden;
         }
 
         h2 { 
@@ -37,30 +35,33 @@
             margin-bottom: 5px; 
             color: #00FFFF; 
             text-shadow: 0 0 10px rgba(0,255,255,0.5); 
-            font-size: 24px;
+            font-size: 22px;
         }
         
         #pesan-status {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             font-size: 14px;
             color: #ff9f43;
             font-weight: bold;
-            min-height: 40px; /* Menjaga agar teks tidak membuat kamera naik-turun */
+            min-height: 40px; 
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        /* Pembungkus agar kamera responsif di HP */
         .kamera-wrapper {
             width: 100%;
-            max-width: 500px; /* Batas maksimal jika dibuka di laptop/tablet */
+            max-width: 500px; 
             position: relative;
+            display: flex;
+            justify-content: center;
         }
 
         canvas {
             width: 100%;
-            height: auto; /* Akan otomatis menyesuaikan rasio tinggi layar */
+            /* Membatasi tinggi agar tidak kepanjangan di layar HP */
+            max-height: 75vh; 
+            object-fit: contain; /* Menjaga proporsi asli */
             border: 2px solid #333;
             border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0,255,255,0.2);
@@ -77,7 +78,6 @@
     <h2>Bingkai Foto Virtual 📸</h2>
     <div id="pesan-status">Memuat AI... Mohon tunggu.</div>
     
-    <!-- Wrapper Kamera -->
     <div class="kamera-wrapper">
         <video id="input_video" autoplay playsinline></video>
         <canvas id="output_canvas" width="640" height="480"></canvas>
@@ -90,6 +90,13 @@
         const pesanStatus = document.getElementById('pesan-status');
 
         function onResults(results) {
+            // === PERBAIKAN DISTORSI KAMERA ===
+            // Jika ukuran asli video dari kamera berbeda dengan canvas, ubah canvasnya!
+            if (videoElement.videoWidth > 0 && canvasElement.width !== videoElement.videoWidth) {
+                canvasElement.width = videoElement.videoWidth;
+                canvasElement.height = videoElement.videoHeight;
+            }
+
             // Cek jumlah tangan yang terdeteksi
             if (results.multiHandLandmarks && results.multiHandLandmarks.length === 2) {
                 pesanStatus.innerHTML = "✨ Gestur Siap! ✨<br>Gerakkan jari telunjuk & jempolmu";
@@ -112,7 +119,6 @@
                     drawLandmarks(canvasCtx, landmarks, {color: 'rgba(255, 0, 0, 0.3)', lineWidth: 1, radius: 2});
                 }
 
-                // === LOGIKA BINGKAI 2 TANGAN (4 JARI) ===
                 if (results.multiHandLandmarks.length === 2) {
                     const tangan1 = results.multiHandLandmarks[0];
                     const tangan2 = results.multiHandLandmarks[1];
@@ -174,14 +180,12 @@
         
         hands.onResults(onResults);
 
-        // Agar kamera di HP mengambil rasio yang lebih sesuai, 
-        // kita tidak memaksakan resolusi tinggi yang bisa membuat web berat di HP.
         const camera = new Camera(videoElement, {
             onFrame: async () => {
                 await hands.send({image: videoElement});
             },
-            width: 640,
-            height: 480
+            width: undefined,  // Dibiarkan undefined agar mengambil resolusi alami kamera HP
+            height: undefined 
         });
         
         camera.start();
