@@ -2,7 +2,8 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Penambahan user-scalable=no agar layar HP tidak tidak sengaja ter-zoom -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gestur Kamera AI 📸</title>
     
     <!-- Memanggil Library MediaPipe -->
@@ -12,35 +13,60 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             background-color: #111;
             color: white;
             font-family: 'Segoe UI', Tahoma, sans-serif;
+            text-align: center;
+            overflow: hidden; /* Mencegah layar HP bisa di-scroll ke bawah */
         }
 
-        h2 { margin-bottom: 5px; color: #00FFFF; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
+        h2 { 
+            margin-top: 0;
+            margin-bottom: 5px; 
+            color: #00FFFF; 
+            text-shadow: 0 0 10px rgba(0,255,255,0.5); 
+            font-size: 24px;
+        }
         
         #pesan-status {
-            margin-bottom: 15px;
-            font-size: 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
             color: #ff9f43;
             font-weight: bold;
+            min-height: 40px; /* Menjaga agar teks tidak membuat kamera naik-turun */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Pembungkus agar kamera responsif di HP */
+        .kamera-wrapper {
+            width: 100%;
+            max-width: 500px; /* Batas maksimal jika dibuka di laptop/tablet */
+            position: relative;
         }
 
         canvas {
+            width: 100%;
+            height: auto; /* Akan otomatis menyesuaikan rasio tinggi layar */
             border: 2px solid #333;
-            border-radius: 10px;
+            border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0,255,255,0.2);
             background-color: #000;
             transform: scaleX(-1); /* Efek cermin */
-            max-width: 100%;
-            height: auto;
+            display: block;
         }
 
         video { display: none; }
@@ -51,8 +77,11 @@
     <h2>Bingkai Foto Virtual 📸</h2>
     <div id="pesan-status">Memuat AI... Mohon tunggu.</div>
     
-    <video id="input_video" autoplay playsinline></video>
-    <canvas id="output_canvas" width="640" height="480"></canvas>
+    <!-- Wrapper Kamera -->
+    <div class="kamera-wrapper">
+        <video id="input_video" autoplay playsinline></video>
+        <canvas id="output_canvas" width="640" height="480"></canvas>
+    </div>
 
     <script>
         const videoElement = document.getElementById('input_video');
@@ -63,7 +92,7 @@
         function onResults(results) {
             // Cek jumlah tangan yang terdeteksi
             if (results.multiHandLandmarks && results.multiHandLandmarks.length === 2) {
-                pesanStatus.innerText = "✨ Gestur Siap! Gerakkan jarimu! ✨";
+                pesanStatus.innerHTML = "✨ Gestur Siap! ✨<br>Gerakkan jari telunjuk & jempolmu";
                 pesanStatus.style.color = "#00FFFF";
             } else if (results.multiHandLandmarks && results.multiHandLandmarks.length === 1) {
                 pesanStatus.innerText = "Angkat satu tangan lagi ke kamera ✋🤚";
@@ -78,7 +107,6 @@
             canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
             if (results.multiHandLandmarks) {
-                // Gambar kerangka dasar untuk semua tangan yang terdeteksi
                 for (const landmarks of results.multiHandLandmarks) {
                     drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: 'rgba(0, 255, 0, 0.3)', lineWidth: 2});
                     drawLandmarks(canvasCtx, landmarks, {color: 'rgba(255, 0, 0, 0.3)', lineWidth: 1, radius: 2});
@@ -89,7 +117,6 @@
                     const tangan1 = results.multiHandLandmarks[0];
                     const tangan2 = results.multiHandLandmarks[1];
 
-                    // Fungsi pembantu untuk mengubah koordinat desimal AI ke koordinat pixel
                     const getPixel = (titikJari) => {
                         return {
                             x: titikJari.x * canvasElement.width,
@@ -97,15 +124,13 @@
                         };
                     };
 
-                    // Ambil koordinat Jempol (titik 4) dan Telunjuk (titik 8) dari kedua tangan
-                    const j1 = getPixel(tangan1[4]); // Jempol tangan 1
-                    const t1 = getPixel(tangan1[8]); // Telunjuk tangan 1
-                    const j2 = getPixel(tangan2[4]); // Jempol tangan 2
-                    const t2 = getPixel(tangan2[8]); // Telunjuk tangan 2
+                    const j1 = getPixel(tangan1[4]); 
+                    const t1 = getPixel(tangan1[8]); 
+                    const j2 = getPixel(tangan2[4]); 
+                    const t2 = getPixel(tangan2[8]); 
 
                     const semuaTitik = [j1, t1, j2, t2];
 
-                    // Cari batas area paling kiri, kanan, atas, dan bawah dari 4 jari tersebut
                     const minX = Math.min(j1.x, t1.x, j2.x, t2.x);
                     const maxX = Math.max(j1.x, t1.x, j2.x, t2.x);
                     const minY = Math.min(j1.y, t1.y, j2.y, t2.y);
@@ -114,18 +139,16 @@
                     const lebarPersegi = maxX - minX;
                     const tinggiPersegi = maxY - minY;
 
-                    // Gambar Persegi (Bingkai) yang membungkus 4 jari
                     canvasCtx.beginPath();
                     canvasCtx.rect(minX, minY, lebarPersegi, tinggiPersegi);
                     
                     canvasCtx.lineWidth = 4;
-                    canvasCtx.strokeStyle = '#00FFFF'; // Garis pinggir Cyan
-                    canvasCtx.fillStyle = 'rgba(0, 255, 255, 0.2)'; // Warna dalam transparan
+                    canvasCtx.strokeStyle = '#00FFFF'; 
+                    canvasCtx.fillStyle = 'rgba(0, 255, 255, 0.2)'; 
                     
                     canvasCtx.fill();
                     canvasCtx.stroke();
 
-                    // Tambahkan titik penanda warna emas tepat di 4 ujung jari
                     semuaTitik.forEach(titik => {
                         canvasCtx.beginPath();
                         canvasCtx.arc(titik.x, titik.y, 6, 0, 2 * Math.PI);
@@ -143,7 +166,7 @@
         }});
         
         hands.setOptions({
-            maxNumHands: 2, // Wajib 2 tangan
+            maxNumHands: 2, 
             modelComplexity: 1,
             minDetectionConfidence: 0.5,
             minTrackingConfidence: 0.5
@@ -151,6 +174,8 @@
         
         hands.onResults(onResults);
 
+        // Agar kamera di HP mengambil rasio yang lebih sesuai, 
+        // kita tidak memaksakan resolusi tinggi yang bisa membuat web berat di HP.
         const camera = new Camera(videoElement, {
             onFrame: async () => {
                 await hands.send({image: videoElement});
