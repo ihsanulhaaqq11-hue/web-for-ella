@@ -59,9 +59,8 @@
 
         canvas {
             width: 100%;
-            /* Membatasi tinggi agar tidak kepanjangan di layar HP */
             max-height: 75vh; 
-            object-fit: contain; /* Menjaga proporsi asli */
+            object-fit: contain; 
             border: 2px solid #333;
             border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0,255,255,0.2);
@@ -75,7 +74,7 @@
 </head>
 <body>
 
-    <h2>Bingkai Foto Virtual 📸</h2>
+    <h2>Hologram Fleksibel AI ✨</h2>
     <div id="pesan-status">Memuat AI... Mohon tunggu.</div>
     
     <div class="kamera-wrapper">
@@ -90,16 +89,14 @@
         const pesanStatus = document.getElementById('pesan-status');
 
         function onResults(results) {
-            // === PERBAIKAN DISTORSI KAMERA ===
-            // Jika ukuran asli video dari kamera berbeda dengan canvas, ubah canvasnya!
+            // Perbaikan Distorsi Kamera
             if (videoElement.videoWidth > 0 && canvasElement.width !== videoElement.videoWidth) {
                 canvasElement.width = videoElement.videoWidth;
                 canvasElement.height = videoElement.videoHeight;
             }
 
-            // Cek jumlah tangan yang terdeteksi
             if (results.multiHandLandmarks && results.multiHandLandmarks.length === 2) {
-                pesanStatus.innerHTML = "✨ Gestur Siap! ✨<br>Gerakkan jari telunjuk & jempolmu";
+                pesanStatus.innerHTML = "✨ Gestur Siap! ✨<br>Coba putar atau silangkan tanganmu!";
                 pesanStatus.style.color = "#00FFFF";
             } else if (results.multiHandLandmarks && results.multiHandLandmarks.length === 1) {
                 pesanStatus.innerText = "Angkat satu tangan lagi ke kamera ✋🤚";
@@ -115,8 +112,8 @@
 
             if (results.multiHandLandmarks) {
                 for (const landmarks of results.multiHandLandmarks) {
-                    drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: 'rgba(0, 255, 0, 0.3)', lineWidth: 2});
-                    drawLandmarks(canvasCtx, landmarks, {color: 'rgba(255, 0, 0, 0.3)', lineWidth: 1, radius: 2});
+                    drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: 'rgba(0, 255, 0, 0.2)', lineWidth: 2});
+                    drawLandmarks(canvasCtx, landmarks, {color: 'rgba(255, 0, 0, 0.2)', lineWidth: 1, radius: 2});
                 }
 
                 if (results.multiHandLandmarks.length === 2) {
@@ -130,31 +127,39 @@
                         };
                     };
 
-                    const j1 = getPixel(tangan1[4]); 
-                    const t1 = getPixel(tangan1[8]); 
-                    const j2 = getPixel(tangan2[4]); 
-                    const t2 = getPixel(tangan2[8]); 
+                    const j1 = getPixel(tangan1[4]); // Jempol Tangan 1
+                    const t1 = getPixel(tangan1[8]); // Telunjuk Tangan 1
+                    const j2 = getPixel(tangan2[4]); // Jempol Tangan 2
+                    const t2 = getPixel(tangan2[8]); // Telunjuk Tangan 2
 
                     const semuaTitik = [j1, t1, j2, t2];
 
-                    const minX = Math.min(j1.x, t1.x, j2.x, t2.x);
-                    const maxX = Math.max(j1.x, t1.x, j2.x, t2.x);
-                    const minY = Math.min(j1.y, t1.y, j2.y, t2.y);
-                    const maxY = Math.max(j1.y, t1.y, j2.y, t2.y);
-
-                    const lebarPersegi = maxX - minX;
-                    const tinggiPersegi = maxY - minY;
-
+                    // === LOGIKA BIDANG FLEKSIBEL (POLYGON) ===
                     canvasCtx.beginPath();
-                    canvasCtx.rect(minX, minY, lebarPersegi, tinggiPersegi);
                     
+                    // Kita hubungkan titiknya secara berurutan membentuk bidang
+                    canvasCtx.moveTo(j1.x, j1.y); // Mulai dari Jempol 1
+                    canvasCtx.lineTo(t1.x, t1.y); // Tarik garis ke Telunjuk 1
+                    canvasCtx.lineTo(t2.x, t2.y); // Tarik garis ke Telunjuk 2
+                    canvasCtx.lineTo(j2.x, j2.y); // Tarik garis ke Jempol 2
+                    canvasCtx.closePath();        // Balik ke Jempol 1 secara otomatis
+                    
+                    // Gaya Visual (Warna & Garis)
                     canvasCtx.lineWidth = 4;
-                    canvasCtx.strokeStyle = '#00FFFF'; 
-                    canvasCtx.fillStyle = 'rgba(0, 255, 255, 0.2)'; 
+                    canvasCtx.strokeStyle = '#00FFFF'; // Garis pinggir Cyan
+                    
+                    // Membuat efek kaca / hologram yang sedikit bersinar
+                    canvasCtx.fillStyle = 'rgba(0, 255, 255, 0.25)'; 
+                    canvasCtx.shadowColor = '#00FFFF';
+                    canvasCtx.shadowBlur = 15; // Efek glowing
                     
                     canvasCtx.fill();
                     canvasCtx.stroke();
 
+                    // Kembalikan efek shadow ke nol agar tidak memengaruhi elemen lain
+                    canvasCtx.shadowBlur = 0; 
+
+                    // Gambar penanda emas di ujung ke-4 jari
                     semuaTitik.forEach(titik => {
                         canvasCtx.beginPath();
                         canvasCtx.arc(titik.x, titik.y, 6, 0, 2 * Math.PI);
@@ -184,7 +189,7 @@
             onFrame: async () => {
                 await hands.send({image: videoElement});
             },
-            width: undefined,  // Dibiarkan undefined agar mengambil resolusi alami kamera HP
+            width: undefined,
             height: undefined 
         });
         
