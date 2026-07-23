@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Gestur Kamera AI 📸</title>
+    <title>Hologram Invert AI 📸</title>
     
+    <!-- Memanggil Library MediaPipe -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
@@ -74,7 +75,7 @@
 </head>
 <body>
 
-    <h2>Hologram Fleksibel AI ✨</h2>
+    <h2>Hologram Invert AI ✨</h2>
     <div id="pesan-status">Memuat AI... Mohon tunggu.</div>
     
     <div class="kamera-wrapper">
@@ -96,7 +97,7 @@
             }
 
             if (results.multiHandLandmarks && results.multiHandLandmarks.length === 2) {
-                pesanStatus.innerHTML = "✨ Gestur Siap! ✨<br>Coba putar atau silangkan tanganmu!";
+                pesanStatus.innerHTML = "✨ Efek Invert Aktif! ✨<br>Perhatikan warna di dalam kotak!";
                 pesanStatus.style.color = "#00FFFF";
             } else if (results.multiHandLandmarks && results.multiHandLandmarks.length === 1) {
                 pesanStatus.innerText = "Angkat satu tangan lagi ke kamera ✋🤚";
@@ -127,39 +128,51 @@
                         };
                     };
 
-                    const j1 = getPixel(tangan1[4]); // Jempol Tangan 1
-                    const t1 = getPixel(tangan1[8]); // Telunjuk Tangan 1
-                    const j2 = getPixel(tangan2[4]); // Jempol Tangan 2
-                    const t2 = getPixel(tangan2[8]); // Telunjuk Tangan 2
+                    const j1 = getPixel(tangan1[4]); 
+                    const t1 = getPixel(tangan1[8]); 
+                    const j2 = getPixel(tangan2[4]); 
+                    const t2 = getPixel(tangan2[8]); 
 
                     const semuaTitik = [j1, t1, j2, t2];
 
-                    // === LOGIKA BIDANG FLEKSIBEL (POLYGON) ===
+                    // === LOGIKA EFEK INVERT DI DALAM BIDANG ===
+                    canvasCtx.save(); // Simpan kondisi canvas sebelum di-clip
+                    
+                    // 1. Buat bentuk jalur (path) dari 4 jari
                     canvasCtx.beginPath();
-                    
-                    // Kita hubungkan titiknya secara berurutan membentuk bidang
-                    canvasCtx.moveTo(j1.x, j1.y); // Mulai dari Jempol 1
-                    canvasCtx.lineTo(t1.x, t1.y); // Tarik garis ke Telunjuk 1
-                    canvasCtx.lineTo(t2.x, t2.y); // Tarik garis ke Telunjuk 2
-                    canvasCtx.lineTo(j2.x, j2.y); // Tarik garis ke Jempol 2
-                    canvasCtx.closePath();        // Balik ke Jempol 1 secara otomatis
-                    
-                    // Gaya Visual (Warna & Garis)
-                    canvasCtx.lineWidth = 4;
-                    canvasCtx.strokeStyle = '#00FFFF'; // Garis pinggir Cyan
-                    
-                    // Membuat efek kaca / hologram yang sedikit bersinar
-                    canvasCtx.fillStyle = 'rgba(0, 255, 255, 0.25)'; 
-                    canvasCtx.shadowColor = '#00FFFF';
-                    canvasCtx.shadowBlur = 15; // Efek glowing
-                    
-                    canvasCtx.fill();
-                    canvasCtx.stroke();
+                    canvasCtx.moveTo(j1.x, j1.y);
+                    canvasCtx.lineTo(t1.x, t1.y);
+                    canvasCtx.lineTo(t2.x, t2.y);
+                    canvasCtx.lineTo(j2.x, j2.y);
+                    canvasCtx.closePath();
 
-                    // Kembalikan efek shadow ke nol agar tidak memengaruhi elemen lain
+                    // 2. Batasi area gambar hanya di dalam bentuk 4 jari tersebut (Clip)
+                    canvasCtx.clip();
+
+                    // 3. Ubah filter warna canvas menjadi 'invert' (membalikkan warna)
+                    canvasCtx.filter = 'invert(100%)';
+                    
+                    // 4. Gambar ulang video di dalam area yang dibatasi (efek invert hanya terjadi di sini)
+                    canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+                    
+                    canvasCtx.restore(); // Kembalikan pengaturan canvas seperti semula
+
+                    // === MENGGAMBAR GARIS TEPI BINGKAI ===
+                    canvasCtx.beginPath();
+                    canvasCtx.moveTo(j1.x, j1.y);
+                    canvasCtx.lineTo(t1.x, t1.y);
+                    canvasCtx.lineTo(t2.x, t2.y);
+                    canvasCtx.lineTo(j2.x, j2.y);
+                    canvasCtx.closePath();
+
+                    canvasCtx.lineWidth = 4;
+                    canvasCtx.strokeStyle = '#00FFFF'; // Garis tepi warna Cyan
+                    canvasCtx.shadowColor = '#00FFFF';
+                    canvasCtx.shadowBlur = 15;
+                    canvasCtx.stroke();
                     canvasCtx.shadowBlur = 0; 
 
-                    // Gambar penanda emas di ujung ke-4 jari
+                    // Titik penanda emas di ujung jari
                     semuaTitik.forEach(titik => {
                         canvasCtx.beginPath();
                         canvasCtx.arc(titik.x, titik.y, 6, 0, 2 * Math.PI);
