@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hologram Invert AI 📸</title>
+    <title>Hologram & Love Gesture AI 📸</title>
     
     <!-- Memanggil Library MediaPipe -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
@@ -75,7 +75,7 @@
 </head>
 <body>
 
-    <h2>Hologram Invert AI ✨</h2>
+    <h2>Hologram & Love Gesture ✨</h2>
     <div id="pesan-status">Memuat AI... Mohon tunggu.</div>
     
     <div class="kamera-wrapper">
@@ -96,12 +96,13 @@
                 canvasElement.height = videoElement.videoHeight;
             }
 
+            // Status teks berdasarkan jumlah tangan
             if (results.multiHandLandmarks && results.multiHandLandmarks.length === 2) {
-                pesanStatus.innerHTML = "✨ Efek Invert Aktif! ✨<br>Perhatikan warna di dalam kotak!";
+                pesanStatus.innerHTML = "✨ Efek Invert 2 Tangan Aktif! ✨";
                 pesanStatus.style.color = "#00FFFF";
             } else if (results.multiHandLandmarks && results.multiHandLandmarks.length === 1) {
-                pesanStatus.innerText = "Angkat satu tangan lagi ke kamera ✋🤚";
-                pesanStatus.style.color = "#ff9f43";
+                pesanStatus.innerHTML = "💖 Mode 1 Tangan Aktif!<br>Dekatkan/renggangkan jempol & telunjuk";
+                pesanStatus.style.color = "#ff6b81";
             } else {
                 pesanStatus.innerText = "Tangan tidak terdeteksi...";
                 pesanStatus.style.color = "#ff4757";
@@ -117,7 +118,45 @@
                     drawLandmarks(canvasCtx, landmarks, {color: 'rgba(255, 0, 0, 0.2)', lineWidth: 1, radius: 2});
                 }
 
-                if (results.multiHandLandmarks.length === 2) {
+                // === FITUR 1: MENDETEKSI 1 TANGAN (MUNCUL LOVE BERDASARKAN JARAK JARI) ===
+                if (results.multiHandLandmarks.length === 1) {
+                    const tangan = results.multiHandLandmarks[0];
+                    const jempol = tangan[4];
+                    const telunjuk = tangan[8];
+
+                    const jx = jempol.x * canvasElement.width;
+                    const jy = jempol.y * canvasElement.height;
+                    const tx = telunjuk.x * canvasElement.width;
+                    const ty = telunjuk.y * canvasElement.height;
+
+                    // Hitung jarak antara jempol dan telunjuk
+                    const dx = tx - jx;
+                    const dy = ty - jy;
+                    const jarakJari = Math.sqrt(dx * dx + dy * dy);
+
+                    // Titik tengah di antara jempol dan telunjuk
+                    const tengahX = jx + (dx / 2);
+                    const tengahY = jy + (dy / 2);
+
+                    // Ukuran Love mengikuti jarak jari (minimum ukuran 30px agar tetap terlihat)
+                    const ukuranLove = Math.max(30, jarakJari * 1.5);
+
+                    canvasCtx.save();
+                    canvasCtx.translate(tengahX, tengahY); // Posisikan di tengah jari
+
+                    // Gambar Simbol Love (❤️) menggunakan fungsi kurva Canvas
+                    canvasCtx.font = `${ukuranLove}px sans-serif`;
+                    canvasCtx.textAlign = 'center';
+                    canvasCtx.textBaseline = 'middle';
+                    canvasCtx.shadowColor = '#ff4757';
+                    canvasCtx.shadowBlur = 20;
+                    canvasCtx.fillText('❤️', 0, 0);
+
+                    canvasCtx.restore();
+                }
+
+                // === FITUR 2: MENDETEKSI 2 TANGAN (BINGKAI FLEKSIBEL + INVERT) ===
+                else if (results.multiHandLandmarks.length === 2) {
                     const tangan1 = results.multiHandLandmarks[0];
                     const tangan2 = results.multiHandLandmarks[1];
 
@@ -135,29 +174,21 @@
 
                     const semuaTitik = [j1, t1, j2, t2];
 
-                    // === LOGIKA EFEK INVERT DI DALAM BIDANG ===
-                    canvasCtx.save(); // Simpan kondisi canvas sebelum di-clip
-                    
-                    // 1. Buat bentuk jalur (path) dari 4 jari
+                    // Efek Invert di dalam bidang 4 jari
+                    canvasCtx.save();
                     canvasCtx.beginPath();
                     canvasCtx.moveTo(j1.x, j1.y);
                     canvasCtx.lineTo(t1.x, t1.y);
                     canvasCtx.lineTo(t2.x, t2.y);
                     canvasCtx.lineTo(j2.x, j2.y);
                     canvasCtx.closePath();
-
-                    // 2. Batasi area gambar hanya di dalam bentuk 4 jari tersebut (Clip)
                     canvasCtx.clip();
 
-                    // 3. Ubah filter warna canvas menjadi 'invert' (membalikkan warna)
                     canvasCtx.filter = 'invert(100%)';
-                    
-                    // 4. Gambar ulang video di dalam area yang dibatasi (efek invert hanya terjadi di sini)
                     canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-                    
-                    canvasCtx.restore(); // Kembalikan pengaturan canvas seperti semula
+                    canvasCtx.restore();
 
-                    // === MENGGAMBAR GARIS TEPI BINGKAI ===
+                    // Garis Tepi Bingkai
                     canvasCtx.beginPath();
                     canvasCtx.moveTo(j1.x, j1.y);
                     canvasCtx.lineTo(t1.x, t1.y);
@@ -166,13 +197,12 @@
                     canvasCtx.closePath();
 
                     canvasCtx.lineWidth = 4;
-                    canvasCtx.strokeStyle = '#00FFFF'; // Garis tepi warna Cyan
+                    canvasCtx.strokeStyle = '#00FFFF'; 
                     canvasCtx.shadowColor = '#00FFFF';
                     canvasCtx.shadowBlur = 15;
                     canvasCtx.stroke();
                     canvasCtx.shadowBlur = 0; 
 
-                    // Titik penanda emas di ujung jari
                     semuaTitik.forEach(titik => {
                         canvasCtx.beginPath();
                         canvasCtx.arc(titik.x, titik.y, 6, 0, 2 * Math.PI);
