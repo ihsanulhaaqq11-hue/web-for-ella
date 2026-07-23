@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestur Kamera AI 📸</title>
+    
+    <!-- Memanggil Library MediaPipe -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #111;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+        }
+
+        h2 { margin-bottom: 5px; color: #00FFFF; text-shadow: 0 0 10px rgba(0,255,255,0.5); }
+        
+        #pesan-status {
+            margin-bottom: 15px;
+            font-size: 15px;
+            color: #ff9f43;
+            font-weight: bold;
+        }
+
+        canvas {
+            border: 2px solid #333;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,255,255,0.2);
+            background-color: #000;
+            transform: scaleX(-1); /* Efek cermin */
+            max-width: 100%;
+            height: auto;
+        }
+
+        video { display: none; }
+    </style>
+</head>
+<body>
+
+    <h2>Bingkai Foto Virtual 📸</h2>
+    <div id="pesan-status">Memuat AI... Mohon tunggu.</div>
+    
+    <video id="input_video" autoplay playsinline></video>
+    <canvas id="output_canvas" width="640" height="480"></canvas>
+
+    <script>
+        const videoElement = document.getElementById('input_video');
+        const canvasElement = document.getElementById('output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const pesanStatus = document.getElementById('pesan-status');
+
+        function onResults(results) {
+            // Cek jumlah tangan yang terdeteksi
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length === 2) {
+                pesanStatus.innerText = "✨ Gestur Siap! Gerakkan jarimu! ✨";
+                pesanStatus.style.color = "#00FFFF";
+            } else if (results.multiHandLandmarks && results.multiHandLandmarks.length === 1) {
+                pesanStatus.innerText = "Angkat satu tangan lagi ke kamera ✋🤚";
+                pesanStatus.style.color = "#ff9f43";
+            } else {
+                pesanStatus.innerText = "Tangan tidak terdeteksi...";
+                pesanStatus.style.color = "#ff4757";
+            }
+            
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+            if (results.multiHandLandmarks) {
+                // Gambar kerangka dasar untuk semua tangan yang terdeteksi
+                for (const landmarks of results.multiHandLandmarks) {
+                    drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: 'rgba(0, 255, 0, 0.3)', lineWidth: 2});
+                    drawLandmarks(canvasCtx, landmarks, {color: 'rgba(255, 0, 0, 0.3)', lineWidth: 1, radius: 2});
+                }
+
+                // === LOGIKA BINGKAI 2 TANGAN (4 JARI) ===
+                if (results.multiHandLandmarks.length === 2) {
+                    const tangan1 = results.multiHandLandmarks[0];
+                    const tangan2 = results.multiHandLandmarks[1];
+
+                    // Fungsi pembantu untuk mengubah koordinat desimal AI ke koordinat pixel
+                    const getPixel = (titikJari) => {
+                        return {
+                            x: titikJari.x * canvasElement.width,
+                            y: titikJari.y * canvasElement.height
+                        };
+                    };
+
+                    // Ambil koordinat Jempol (titik 4) dan Telunjuk (titik 8) dari kedua tangan
+                    const j1 = getPixel(tangan1[4]); // Jempol tangan 1
+                    const t1 = getPixel(tangan1[8]); // Telunjuk tangan 1
+                    const j2 = getPixel(tangan2[4]); // Jempol tangan 2
+                    const t2 = getPixel(tangan2[8]); // Telunjuk tangan 2
+
+                    const semuaTitik = [j1, t1, j2, t2];
+
+                    // Cari batas area paling kiri, kanan, atas, dan bawah dari 4 jari tersebut
+                    const minX = Math.min(j1.x, t1.x, j2.x, t2.x);
+                    const maxX = Math.max(j1.x, t1.x, j2.x, t2.x);
+                    const minY = Math.min(j1.y, t1.y, j2.y, t2.y);
+                    const maxY = Math.max(j1.y, t1.y, j2.y, t2.y);
+
+                    const lebarPersegi = maxX - minX;
+                    const tinggiPersegi = maxY - minY;
+
+                    // Gambar Persegi (Bingkai) yang membungkus 4 jari
+                    canvasCtx.beginPath();
+                    canvasCtx.rect(minX, minY, lebarPersegi, tinggiPersegi);
+                    
+                    canvasCtx.lineWidth = 4;
+                    canvasCtx.strokeStyle = '#00FFFF'; // Garis pinggir Cyan
+                    canvasCtx.fillStyle = 'rgba(0, 255, 255, 0.2)'; // Warna dalam transparan
+                    
+                    canvasCtx.fill();
+                    canvasCtx.stroke();
+
+                    // Tambahkan titik penanda warna emas tepat di 4 ujung jari
+                    semuaTitik.forEach(titik => {
+                        canvasCtx.beginPath();
+                        canvasCtx.arc(titik.x, titik.y, 6, 0, 2 * Math.PI);
+                        canvasCtx.fillStyle = '#FFD700';
+                        canvasCtx.fill();
+                        canvasCtx.stroke();
+                    });
+                }
+            }
+            canvasCtx.restore();
+        }
+
+        const hands = new Hands({locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+        }});
+        
+        hands.setOptions({
+            maxNumHands: 2, // Wajib 2 tangan
+            modelComplexity: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+        
+        hands.onResults(onResults);
+
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({image: videoElement});
+            },
+            width: 640,
+            height: 480
+        });
+        
+        camera.start();
+    </script>
+</body>
+</html>
