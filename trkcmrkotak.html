@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI Hand Tracking & Hologram ✨</title>
+    <title>AI Hand Tracking & Saranghae ✨</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -19,7 +19,6 @@
             font-family: 'Segoe UI', Tahoma, sans-serif; text-align: center; overflow: hidden;
         }
 
-        /* Tombol Kembali ke Menu */
         .btn-home {
             position: fixed; top: 15px; left: 15px; z-index: 999;
             background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3);
@@ -46,7 +45,7 @@
 
     <a href="appgaleritrck.html" class="btn-home">🏠 Menu</a>
 
-    <h2>Hologram & Love Gesture ✨</h2>
+    <h2>Saranghae & Hologram AI ✨</h2>
     <div id="pesan-status">Memuat AI... Mohon tunggu.</div>
     
     <div class="kamera-wrapper">
@@ -70,7 +69,7 @@
                 pesanStatus.innerHTML = "✨ Efek Invert 2 Tangan Aktif! ✨";
                 pesanStatus.style.color = "#00FFFF";
             } else if (results.multiHandLandmarks && results.multiHandLandmarks.length === 1) {
-                pesanStatus.innerHTML = "💖 Mode 1 Tangan: Renggangkan jempol & telunjuk";
+                pesanStatus.innerHTML = "💖 Bentuk jari gaya Saranghae (Korea) untuk memunculkan Love!";
                 pesanStatus.style.color = "#ff6b81";
             } else {
                 pesanStatus.innerText = "Tangan tidak terdeteksi...";
@@ -87,35 +86,43 @@
                     drawLandmarks(canvasCtx, landmarks, {color: 'rgba(255, 0, 0, 0.2)', lineWidth: 1, radius: 2});
                 }
 
-                // 1 Tangan -> Love Gesture
+                // === 1 TANGAN: DETEKSI GESTUR SARANGHAE (KOREAN FINGER HEART) ===
                 if (results.multiHandLandmarks.length === 1) {
                     const tangan = results.multiHandLandmarks[0];
-                    const jempol = tangan[4];
-                    const telunjuk = tangan[8];
+                    const jempolTip = tangan[4];   // Ujung jempol
+                    const telunjukTip = tangan[8]; // Ujung telunjuk
 
-                    const jx = jempol.x * canvasElement.width;
-                    const jy = jempol.y * canvasElement.height;
-                    const tx = telunjuk.x * canvasElement.width;
-                    const ty = telunjuk.y * canvasElement.height;
+                    const jx = jempolTip.x * canvasElement.width;
+                    const jy = jempolTip.y * canvasElement.height;
+                    const tx = telunjukTip.x * canvasElement.width;
+                    const ty = telunjukTip.y * canvasElement.height;
 
+                    // Hitung jarak antara ujung jempol dan ujung telunjuk
                     const dx = tx - jx;
                     const dy = ty - jy;
                     const jarakJari = Math.sqrt(dx * dx + dy * dy);
-                    const tengahX = jx + (dx / 2);
-                    const tengahY = jy + (dy / 2);
-                    const ukuranLove = Math.max(30, jarakJari * 1.5);
 
-                    canvasCtx.save();
-                    canvasCtx.translate(tengahX, tengahY);
-                    canvasCtx.font = `${ukuranLove}px sans-serif`;
-                    canvasCtx.textAlign = 'center';
-                    canvasCtx.textBaseline = 'middle';
-                    canvasCtx.shadowColor = '#ff4757';
-                    canvasCtx.shadowBlur = 20;
-                    canvasCtx.fillText('❤️', 0, 0);
-                    canvasCtx.restore();
+                    // Syarat Gestur Saranghae:
+                    // 1. Ujung jempol dan telunjuk harus sangat dekat (jarak pixel kecil, misal di bawah 50 pixel tergantung resolusi)
+                    // 2. Posisi vertikal telunjuk harus berada di atas atau bersilangan dengan jempol (ty < jy atau bersilangan tipis)
+                    const isSaranghae = jarakJari < 45; 
+
+                    if (isSaranghae) {
+                        const tengahX = jx + (dx / 2);
+                        const tengahY = jy + (dy / 2);
+
+                        canvasCtx.save();
+                        canvasCtx.translate(tengahX, tengahY);
+                        canvasCtx.font = `50px sans-serif`; // Ukuran tetap yang manis untuk finger heart
+                        canvasCtx.textAlign = 'center';
+                        canvasCtx.textBaseline = 'middle';
+                        canvasCtx.shadowColor = '#ff4757';
+                        canvasCtx.shadowBlur = 25;
+                        canvasCtx.fillText('❤️', 0, 0);
+                        canvasCtx.restore();
+                    }
                 }
-                // 2 Tangan -> Hologram Invert Fleksibel
+                // === 2 TANGAN: BINGKAI HOLOGRAM INVERT FLEKSIBEL ===
                 else if (results.multiHandLandmarks.length === 2) {
                     const tangan1 = results.multiHandLandmarks[0];
                     const tangan2 = results.multiHandLandmarks[1];
