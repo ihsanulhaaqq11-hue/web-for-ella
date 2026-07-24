@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portal Utama ✨</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e1b4b);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #00FFFF;
+            text-shadow: 0 0 15px rgba(0,255,255,0.4);
+        }
+
+        p {
+            color: #94a3b8;
+            font-size: 14px;
+            margin-bottom: 40px;
+        }
+
+        .menu-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+            max-width: 350px;
+        }
+
+        .menu-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 18px 20px;
+            border-radius: 20px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .menu-btn:hover {
+            background: #e94560;
+            border-color: #e94560;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(233, 69, 96, 0.4);
+        }
+
+        .footer {
+            margin-top: 50px;
+            font-size: 12px;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>✨ Portal Kreatif ✨</h1>
+    <p>Silakan pilih menu interaktif di bawah ini:</p>
+
+    <div class="menu-container">
+        <a href="galeril.html" class="menu-btn">
+            🖼️ Galeri Foto & 360°
+        </a>
+
+        <a href="trkcmrkotak.html" class="menu-btn">
+            📸 Kamera AI & Gestur Tangan
+        </a>
+    </div>
+
+    <div class="footer">
+        Dibuat khusus untuk Ikhsan & Ella 🚀
+    </div>
+
+</body>
+</html>
