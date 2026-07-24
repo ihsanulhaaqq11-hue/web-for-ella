@@ -3,77 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hologram & Love Gesture AI 📸</title>
+    <title>AI Hand Tracking & Hologram ✨</title>
     
-    <!-- Memanggil Library MediaPipe -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     
     <style>
-        * {
-            box-sizing: border-box;
-        }
-
+        * { box-sizing: border-box; }
         body {
-            margin: 0;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background-color: #111;
-            color: white;
-            font-family: 'Segoe UI', Tahoma, sans-serif;
-            text-align: center;
-            overflow: hidden;
+            margin: 0; padding: 15px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            min-height: 100vh; background-color: #111; color: white;
+            font-family: 'Segoe UI', Tahoma, sans-serif; text-align: center; overflow: hidden;
         }
 
-        h2 { 
-            margin-top: 0;
-            margin-bottom: 5px; 
-            color: #00FFFF; 
-            text-shadow: 0 0 10px rgba(0,255,255,0.5); 
-            font-size: 22px;
+        /* Tombol Kembali ke Menu */
+        .btn-home {
+            position: fixed; top: 15px; left: 15px; z-index: 999;
+            background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white; padding: 8px 15px; border-radius: 20px; font-size: 13px;
+            font-weight: bold; text-decoration: none; backdrop-filter: blur(5px);
         }
-        
+
+        h2 { margin-top: 25px; margin-bottom: 5px; color: #00FFFF; font-size: 20px; }
         #pesan-status {
-            margin-bottom: 15px;
-            font-size: 14px;
-            color: #ff9f43;
-            font-weight: bold;
-            min-height: 40px; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            margin-bottom: 10px; font-size: 13px; color: #ff9f43; font-weight: bold;
+            min-height: 35px; display: flex; align-items: center; justify-content: center;
         }
 
-        .kamera-wrapper {
-            width: 100%;
-            max-width: 500px; 
-            position: relative;
-            display: flex;
-            justify-content: center;
-        }
-
+        .kamera-wrapper { width: 100%; max-width: 500px; position: relative; display: flex; justify-content: center; }
         canvas {
-            width: 100%;
-            max-height: 75vh; 
-            object-fit: contain; 
-            border: 2px solid #333;
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0,255,255,0.2);
-            background-color: #000;
-            transform: scaleX(-1); /* Efek cermin */
-            display: block;
+            width: 100%; max-height: 72vh; object-fit: contain;
+            border: 2px solid #333; border-radius: 15px; background-color: #000;
+            transform: scaleX(-1); display: block; box-shadow: 0 10px 30px rgba(0,255,255,0.2);
         }
-
         video { display: none; }
     </style>
 </head>
 <body>
+
+    <a href="appgaleritrck.html" class="btn-home">🏠 Menu</a>
 
     <h2>Hologram & Love Gesture ✨</h2>
     <div id="pesan-status">Memuat AI... Mohon tunggu.</div>
@@ -90,18 +61,16 @@
         const pesanStatus = document.getElementById('pesan-status');
 
         function onResults(results) {
-            // Perbaikan Distorsi Kamera
             if (videoElement.videoWidth > 0 && canvasElement.width !== videoElement.videoWidth) {
                 canvasElement.width = videoElement.videoWidth;
                 canvasElement.height = videoElement.videoHeight;
             }
 
-            // Status teks berdasarkan jumlah tangan
             if (results.multiHandLandmarks && results.multiHandLandmarks.length === 2) {
                 pesanStatus.innerHTML = "✨ Efek Invert 2 Tangan Aktif! ✨";
                 pesanStatus.style.color = "#00FFFF";
             } else if (results.multiHandLandmarks && results.multiHandLandmarks.length === 1) {
-                pesanStatus.innerHTML = "💖 Mode 1 Tangan Aktif!<br>Dekatkan/renggangkan jempol & telunjuk";
+                pesanStatus.innerHTML = "💖 Mode 1 Tangan: Renggangkan jempol & telunjuk";
                 pesanStatus.style.color = "#ff6b81";
             } else {
                 pesanStatus.innerText = "Tangan tidak terdeteksi...";
@@ -118,7 +87,7 @@
                     drawLandmarks(canvasCtx, landmarks, {color: 'rgba(255, 0, 0, 0.2)', lineWidth: 1, radius: 2});
                 }
 
-                // === FITUR 1: MENDETEKSI 1 TANGAN (MUNCUL LOVE BERDASARKAN JARAK JARI) ===
+                // 1 Tangan -> Love Gesture
                 if (results.multiHandLandmarks.length === 1) {
                     const tangan = results.multiHandLandmarks[0];
                     const jempol = tangan[4];
@@ -129,52 +98,39 @@
                     const tx = telunjuk.x * canvasElement.width;
                     const ty = telunjuk.y * canvasElement.height;
 
-                    // Hitung jarak antara jempol dan telunjuk
                     const dx = tx - jx;
                     const dy = ty - jy;
                     const jarakJari = Math.sqrt(dx * dx + dy * dy);
-
-                    // Titik tengah di antara jempol dan telunjuk
                     const tengahX = jx + (dx / 2);
                     const tengahY = jy + (dy / 2);
-
-                    // Ukuran Love mengikuti jarak jari (minimum ukuran 30px agar tetap terlihat)
                     const ukuranLove = Math.max(30, jarakJari * 1.5);
 
                     canvasCtx.save();
-                    canvasCtx.translate(tengahX, tengahY); // Posisikan di tengah jari
-
-                    // Gambar Simbol Love (❤️) menggunakan fungsi kurva Canvas
+                    canvasCtx.translate(tengahX, tengahY);
                     canvasCtx.font = `${ukuranLove}px sans-serif`;
                     canvasCtx.textAlign = 'center';
                     canvasCtx.textBaseline = 'middle';
                     canvasCtx.shadowColor = '#ff4757';
                     canvasCtx.shadowBlur = 20;
                     canvasCtx.fillText('❤️', 0, 0);
-
                     canvasCtx.restore();
                 }
-
-                // === FITUR 2: MENDETEKSI 2 TANGAN (BINGKAI FLEKSIBEL + INVERT) ===
+                // 2 Tangan -> Hologram Invert Fleksibel
                 else if (results.multiHandLandmarks.length === 2) {
                     const tangan1 = results.multiHandLandmarks[0];
                     const tangan2 = results.multiHandLandmarks[1];
 
-                    const getPixel = (titikJari) => {
-                        return {
-                            x: titikJari.x * canvasElement.width,
-                            y: titikJari.y * canvasElement.height
-                        };
-                    };
+                    const getPixel = (titikJari) => ({
+                        x: titikJari.x * canvasElement.width,
+                        y: titikJari.y * canvasElement.height
+                    });
 
                     const j1 = getPixel(tangan1[4]); 
                     const t1 = getPixel(tangan1[8]); 
                     const j2 = getPixel(tangan2[4]); 
                     const t2 = getPixel(tangan2[8]); 
-
                     const semuaTitik = [j1, t1, j2, t2];
 
-                    // Efek Invert di dalam bidang 4 jari
                     canvasCtx.save();
                     canvasCtx.beginPath();
                     canvasCtx.moveTo(j1.x, j1.y);
@@ -188,7 +144,6 @@
                     canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
                     canvasCtx.restore();
 
-                    // Garis Tepi Bingkai
                     canvasCtx.beginPath();
                     canvasCtx.moveTo(j1.x, j1.y);
                     canvasCtx.lineTo(t1.x, t1.y);
@@ -197,7 +152,7 @@
                     canvasCtx.closePath();
 
                     canvasCtx.lineWidth = 4;
-                    canvasCtx.strokeStyle = '#00FFFF'; 
+                    canvasCtx.strokeStyle = '#00FFFF';
                     canvasCtx.shadowColor = '#00FFFF';
                     canvasCtx.shadowBlur = 15;
                     canvasCtx.stroke();
@@ -215,27 +170,14 @@
             canvasCtx.restore();
         }
 
-        const hands = new Hands({locateFile: (file) => {
-            return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-        }});
-        
-        hands.setOptions({
-            maxNumHands: 2, 
-            modelComplexity: 1,
-            minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5
-        });
-        
+        const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+        hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
         hands.onResults(onResults);
 
         const camera = new Camera(videoElement, {
-            onFrame: async () => {
-                await hands.send({image: videoElement});
-            },
-            width: undefined,
-            height: undefined 
+            onFrame: async () => { await hands.send({image: videoElement}); },
+            width: undefined, height: undefined 
         });
-        
         camera.start();
     </script>
 </body>
